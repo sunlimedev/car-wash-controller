@@ -12,3 +12,5 @@ https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio
 https://semver.org/
 
 https://rgbcolorpicker.com/0-1
+
+https://peps.python.org/pep-0008/
