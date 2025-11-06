@@ -12,6 +12,9 @@
 # Change function names to explain them better
 # Change comment style to improve readability
 # Move references to README
+# Fix sequence_fade() assigning pin >1
+# Fix sequence_decay() assigning pin >1
+# Rename sequence_decay() to sequence_pulse()
 
 # Packages:
 import numpy as np
@@ -79,7 +82,7 @@ def sequence_fade(color_list, speed):
 
             for x in steps:
                 # get fade brightness based on sine function
-                brightness = (0.5 * np.sin(x)) + 0.5
+                brightness = (0.5 * (np.sin(x + (4.5*PI)/3))) + 0.5
                 # assign final color with brightness to color channels
                 red.value = temp_red * brightness
                 green.value = temp_green * brightness
@@ -89,7 +92,7 @@ def sequence_fade(color_list, speed):
                 sleep(delay)
 
 
-def sequence_decay(color_list, speed):
+def sequence_pulse(color_list, speed):
     # normalize cycle time to 0.5 seconds to 5 seconds
     delay = 0.050 / speed
 
@@ -100,7 +103,7 @@ def sequence_decay(color_list, speed):
 
             for x in range(0, 20):
                 # get fade brightness based on linear function
-                brightness = 5*x
+                brightness = 0.05*x
                 # assign final color with brightness to color channels
                 red.value = temp_red * brightness
                 green.value = temp_green * brightness
@@ -111,7 +114,7 @@ def sequence_decay(color_list, speed):
 
             for x in range(20, 100):
                 # get fade brightness based on exponential decay function
-                brightness = 2.22 * np.exp(-x) - 0.82
+                brightness = 2.22 * np.exp(-0.01*x) - 0.82
                 # assign final color with brightness to color channels
                 red.value = temp_red * brightness
                 green.value = temp_green * brightness
@@ -184,9 +187,17 @@ def main():
 
     # blink white 5 times for startup
     startup_blink()
+    
+    # create ordered list of color values -- r o y g b p
+    color_list = [[1, 0, 0],
+                  [1,0.5,0],
+                  [1, 1, 0],
+                  [0, 1, 0],
+                  [0, 0, 1],
+                  [1, 0, 1]]
 
     # test a lighting function
-    rainbow_smooth(speed)
+    sequence_fade(color_list, speed)
 
 
 if __name__ == "__main__":
