@@ -10,3 +10,5 @@ https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-datasheet.pdf
 https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio
 
 https://semver.org/
+
+https://rgbcolorpicker.com/0-1
