@@ -15,6 +15,8 @@
 # Fix sequence_fade() assigning pin >1
 # Fix sequence_decay() assigning pin >1
 # Rename sequence_decay() to sequence_pulse()
+# Reduced max speed for all functions
+# Reduced startup_blink() duration
 
 # Packages:
 import numpy as np
@@ -33,9 +35,9 @@ def initialize_pwm(red_pin, green_pin, blue_pin):
     global red, green, blue
 
     # set passed GPIO pin as PWM color channel
-    red = PWMLED(red_pin, frequency=200)
-    green = PWMLED(green_pin, frequency=200)
-    blue = PWMLED(blue_pin, frequency=200)
+    red = PWMLED(pin=red_pin, active_high=True, initial_value=0.0, frequency=200)
+    green = PWMLED(pin=green_pin, active_high=True, initial_value=0.0, frequency=200)
+    blue = PWMLED(pin=blue_pin,  active_high=True, initial_value=0.0, frequency=200)
 
 
 def startup_blink():
@@ -44,15 +46,15 @@ def startup_blink():
         red.value = 1
         green.value = 1
         blue.value = 1
-        # hold white for 1 second
-        sleep(1)
+        # hold white for 0.5 second
+        sleep(0.5)
 
         # set all channels off
         red.value = 0
         green.value = 0
         blue.value = 0
-        # hold off for 1 second
-        sleep(1)
+        # hold off for 0.5 second
+        sleep(0.5)
 
 
 def sequence_solid(color_list, speed):
@@ -70,10 +72,10 @@ def sequence_solid(color_list, speed):
 
 def sequence_fade(color_list, speed):
     # normalize cycle time to 0.5 seconds to 5 seconds
-    delay = 0.050 / speed
+    delay = 0.100 / speed
 
-    # create 100 element list with values spaced equally between 0 and 2pi
-    steps = np.linspace(0, 2 * PI, 100)
+    # create 50 element list with values spaced equally between 0 and 2pi
+    steps = np.linspace(0, 2 * PI, 50)
 
     while True:
         for color in color_list:
@@ -82,7 +84,7 @@ def sequence_fade(color_list, speed):
 
             for x in steps:
                 # get fade brightness based on sine function
-                brightness = (0.5 * (np.sin(x + (4.5*PI)/3))) + 0.5
+                brightness = (0.5 * (np.sin(x + (4.5 * PI) / 3))) + 0.5
                 # assign final color with brightness to color channels
                 red.value = temp_red * brightness
                 green.value = temp_green * brightness
@@ -94,16 +96,16 @@ def sequence_fade(color_list, speed):
 
 def sequence_pulse(color_list, speed):
     # normalize cycle time to 0.5 seconds to 5 seconds
-    delay = 0.050 / speed
+    delay = 0.100 / speed
 
     while True:
         for color in color_list:
             # assign color values to each temp color variables
             temp_red, temp_green, temp_blue = color
 
-            for x in range(0, 20):
-                # get fade brightness based on linear function
-                brightness = 0.05*x
+            for x in range(0, 10):
+                # quickly increase brightness based on linear function
+                brightness = (1/9) * x
                 # assign final color with brightness to color channels
                 red.value = temp_red * brightness
                 green.value = temp_green * brightness
@@ -112,9 +114,9 @@ def sequence_pulse(color_list, speed):
                 # hold the current color for the delay length
                 sleep(delay)
 
-            for x in range(20, 100):
-                # get fade brightness based on exponential decay function
-                brightness = 2.22 * np.exp(-0.01*x) - 0.82
+            for x in range(10, 49):
+                # decrease brightness based on exponential decay function
+                brightness = 2.2 * np.exp(-0.08 * x)
                 # assign final color with brightness to color channels
                 red.value = temp_red * brightness
                 green.value = temp_green * brightness
@@ -122,16 +124,24 @@ def sequence_pulse(color_list, speed):
 
                 # hold the current color for the delay length
                 sleep(delay)
+
+            # reset color channel brightness to 0% at last increment
+            red.value = 0
+            green.value = 0
+            blue.value = 0
+
+            # hold channels off for the delay length
+            sleep(delay)
 
 
 def rainbow_spike(speed):
     # normalize cycle time to 0.5 seconds to 5 seconds
-    delay = 0.050 / speed
+    delay = 0.100 / speed
 
     # set color channel starting brightness
     temp_red = 0
-    temp_green = 33
-    temp_blue = 66
+    temp_green = 34
+    temp_blue = 68
 
     while True:
         # reset color channel brightness to 0% after reaching 100%
@@ -142,15 +152,15 @@ def rainbow_spike(speed):
         elif temp_blue == 100:
             temp_blue = 0
 
-        # increment color channel brightness by 1%
-        temp_red += 1
-        temp_green += 1
-        temp_blue += 1
+        # increment color channel brightness by 2%
+        temp_red += 2
+        temp_green += 2
+        temp_blue += 2
 
         # assign brightness to each color channel
-        red.value = temp_red/100.0
-        green.value = temp_green/100.0
-        blue.value = temp_blue/100.0
+        red.value = temp_red / 100.0
+        green.value = temp_green / 100.0
+        blue.value = temp_blue / 100.0
 
         # hold the current color for the delay length
         sleep(delay)
@@ -158,10 +168,10 @@ def rainbow_spike(speed):
 
 def rainbow_smooth(speed):
     # normalize cycle time to 0.5 seconds to 5 seconds
-    delay = 0.050 / speed
+    delay = 0.100 / speed
 
     # create 100 element list with values spaced equally between 0 and 2pi
-    x_values = np.linspace(0, 2 * PI, 100)
+    x_values = np.linspace(0, 2 * PI, 50)
 
     while True:
         for x in x_values:
@@ -187,18 +197,21 @@ def main():
 
     # blink white 5 times for startup
     startup_blink()
-    
+
     # create ordered list of color values -- r o y g b p
     color_list = [[1, 0, 0],
-                  [1,0.5,0],
+                  [1, 0.5, 0],
                   [1, 1, 0],
                   [0, 1, 0],
                   [0, 0, 1],
                   [1, 0, 1]]
 
     # test a lighting function
-    sequence_fade(color_list, speed)
-
+    sequence_solid(color_list, speed)
+    #sequence_fade(color_list, speed)
+    #sequence_pulse(color_list, speed)
+    #rainbow_spike(speed)
+    #rainbow_smooth(speed)
 
 if __name__ == "__main__":
     # direct execution check
