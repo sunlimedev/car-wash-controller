@@ -1,49 +1,194 @@
 # Car Wash Controller
-# Version 0.0.1 - 11/03/2025
-# Developed by Andrew Rosen for Signal-Tech in Erie, PA
+# Developed for Signal-Tech in Erie, PA
 # Designed for use on Raspberry Pi 4 Model B 8GB
 
-# References:
-# https://gpiozero.readthedocs.io
-# https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-datasheet.pdf
-# https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#gpio
-# https://semver.org/
+# Changes from last version:
+# COMPLETE REWRITE
+# Add three different sequence modes requiring color nested list
+# Add sine wave LED switching
+# Add more user-friendly speed variable
+# Use more functions (modular)
+# Add startup procedure for debugging
+# Change function names to explain them better
+# Change comment style to improve readability
+# Move references to README
 
+# Packages:
+import numpy as np
 from gpiozero import PWMLED
 from time import sleep
 
-
-######################### PWM pin initialization #########################
-
-# NOTE: pin numbering is based on broadcom pin numbers
-
-red = PWMLED(13)     # set gpio13 as software pwm pin controlling red LED
-green = PWMLED(19)   # set gpio19 as software pwm pin controlling green LED
-blue = PWMLED(26)    # set gpio26 as software pwm pin controlling green LED
+# Global variables:
+red = None
+green = None
+blue = None
+PI = 3.1415
 
 
-######################### Right-sided Spike Switching #########################
+def initialize_pwm(red_pin, green_pin, blue_pin):
+    # create global variable for the GPIO pins
+    global red, green, blue
 
-# leds each brighten linearly to 100% then reset
+    # set passed GPIO pin as PWM color channel
+    red = PWMLED(red_pin, frequency=200)
+    green = PWMLED(green_pin, frequency=200)
+    blue = PWMLED(blue_pin, frequency=200)
 
-rval = 0    # start red led dividend at 0%
-gval = 33   # start green led dividend at 33%
-bval = 66   # start blue led dividend at 66%
 
-while(1):
-    if(rval == 100):
-        rval = 0       # if red dividend values reach max, reset to zero
-    if(gval == 100):
-        gval = 0       # if green dividend values reach max, reset to zero
-    if(bval == 100):
-        bval = 0       # if blue dividend values reach max, reset to zero
+def startup_blink():
+    for i in range(5):
+        # set all channels to max (white)
+        red.value = 1
+        green.value = 1
+        blue.value = 1
+        # hold white for 1 second
+        sleep(1)
 
-    rval += 1   # increment red brightness percentage by 1
-    gval += 1   # increment green brightness percentage by 1
-    bval += 1   # increment blue brightness percentage by 1
+        # set all channels off
+        red.value = 0
+        green.value = 0
+        blue.value = 0
+        # hold off for 1 second
+        sleep(1)
 
-    red.value = rval/100.0     # set new red led brightness percentage
-    green.value = gval/100.0   # set new green led brightness percentage
-    blue.value = bval/100.0    # set new blue led brightness percentage
-    
-    sleep(0.02)   # stall instructions for 20 milliseconds 
+
+def sequence_solid(color_list, speed):
+    # normalize cycle time to 0.5 seconds to 5 seconds
+    delay = 5 / speed
+
+    while True:
+        for color in color_list:
+            # assign color list contents to color channels
+            red.value, green.value, blue.value = color
+
+            # hold the current color for the delay length
+            sleep(delay)
+
+
+def sequence_fade(color_list, speed):
+    # normalize cycle time to 0.5 seconds to 5 seconds
+    delay = 0.050 / speed
+
+    # create 100 element list with values spaced equally between 0 and 2pi
+    steps = np.linspace(0, 2 * PI, 100)
+
+    while True:
+        for color in color_list:
+            # assign color values to each temp color variables
+            temp_red, temp_green, temp_blue = color
+
+            for x in steps:
+                # get fade brightness based on sine function
+                brightness = (0.5 * np.sin(x)) + 0.5
+                # assign final color with brightness to color channels
+                red.value = temp_red * brightness
+                green.value = temp_green * brightness
+                blue.value = temp_blue * brightness
+
+                # hold the current color for the delay length
+                sleep(delay)
+
+
+def sequence_decay(color_list, speed):
+    # normalize cycle time to 0.5 seconds to 5 seconds
+    delay = 0.050 / speed
+
+    while True:
+        for color in color_list:
+            # assign color values to each temp color variables
+            temp_red, temp_green, temp_blue = color
+
+            for x in range(0, 20):
+                # get fade brightness based on linear function
+                brightness = 5*x
+                # assign final color with brightness to color channels
+                red.value = temp_red * brightness
+                green.value = temp_green * brightness
+                blue.value = temp_blue * brightness
+
+                # hold the current color for the delay length
+                sleep(delay)
+
+            for x in range(20, 100):
+                # get fade brightness based on exponential decay function
+                brightness = 2.22 * np.exp(-x) - 0.82
+                # assign final color with brightness to color channels
+                red.value = temp_red * brightness
+                green.value = temp_green * brightness
+                blue.value = temp_blue * brightness
+
+                # hold the current color for the delay length
+                sleep(delay)
+
+
+def rainbow_spike(speed):
+    # normalize cycle time to 0.5 seconds to 5 seconds
+    delay = 0.050 / speed
+
+    # set color channel starting brightness
+    temp_red = 0
+    temp_green = 33
+    temp_blue = 66
+
+    while True:
+        # reset color channel brightness to 0% after reaching 100%
+        if temp_red == 100:
+            temp_red = 0
+        elif temp_green == 100:
+            temp_green = 0
+        elif temp_blue == 100:
+            temp_blue = 0
+
+        # increment color channel brightness by 1%
+        temp_red += 1
+        temp_green += 1
+        temp_blue += 1
+
+        # assign brightness to each color channel
+        red.value = temp_red/100.0
+        green.value = temp_green/100.0
+        blue.value = temp_blue/100.0
+
+        # hold the current color for the delay length
+        sleep(delay)
+
+
+def rainbow_smooth(speed):
+    # normalize cycle time to 0.5 seconds to 5 seconds
+    delay = 0.050 / speed
+
+    # create 100 element list with values spaced equally between 0 and 2pi
+    x_values = np.linspace(0, 2 * PI, 100)
+
+    while True:
+        for x in x_values:
+            red.value = (0.5 * np.sin(x)) + 0.5
+            green.value = (0.5 * np.sin(x + ((4 * PI) / 3))) + 0.5
+            blue.value = (0.5 * np.sin(x + ((2 * PI) / 3))) + 0.5
+
+            # hold the current color for the delay length
+            sleep(delay)
+
+
+def main():
+    # provide GPIO pins to use
+    red_pin = 13
+    green_pin = 19
+    blue_pin = 26
+
+    # choose speed (1 = slowest, 10 = fastest)
+    speed = 5
+
+    # initialize GPIO pins for each color channel
+    initialize_pwm(red_pin, green_pin, blue_pin)
+
+    # blink white 5 times for startup
+    startup_blink()
+
+    # test a lighting function
+    rainbow_smooth(speed)
+
+
+if __name__ == "__main__":
+    # direct execution check
+    main()
