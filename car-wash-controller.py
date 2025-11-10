@@ -1,6 +1,6 @@
 # Car Wash Controller
 # Developed for Signal-Tech in Erie, PA
-# Designed for use on Raspberry Pi 4 Model B 8GB
+# Designed for use on Raspberry Pi 4 4GB/8GB
 
 # Changes from last version:
 # increased pwm frequency to 4kHz
