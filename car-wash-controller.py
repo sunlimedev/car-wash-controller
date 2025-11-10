@@ -3,21 +3,7 @@
 # Designed for use on Raspberry Pi 4 Model B 8GB
 
 # Changes from last version:
-# COMPLETE REWRITE
-# Add three different sequence modes requiring color nested list
-# Add sine wave LED switching
-# Use more functions (modular)
-# Add startup procedure for debugging
-# Change function names to explain them better
-# Change comment style to improve readability
-# Move references to README
-# Fix sequence_fade() assigning pin >1
-# Fix sequence_decay() assigning pin >1
-# Rename sequence_decay() to sequence_pulse()
-# Reduced max speed for all functions
-# Reduced startup_blink() duration
-# Add random_solid_anybright() function
-# Create cycle time variable for more linear speed adjustments
+# increased pwm frequency to 4kHz
 
 # Packages:
 import random
@@ -37,9 +23,9 @@ def initialize_pwm(red_pin, green_pin, blue_pin):
     global red, green, blue
 
     # set passed GPIO pin as PWM color channel
-    red = PWMLED(pin=red_pin, active_high=True, initial_value=0, frequency=200)
-    green = PWMLED(pin=green_pin, active_high=True, initial_value=0, frequency=200)
-    blue = PWMLED(pin=blue_pin,  active_high=True, initial_value=0, frequency=200)
+    red = PWMLED(pin=red_pin, active_high=True, initial_value=0, frequency=4000)
+    green = PWMLED(pin=green_pin, active_high=True, initial_value=0, frequency=4000)
+    blue = PWMLED(pin=blue_pin,  active_high=True, initial_value=0, frequency=4000)
 
 
 def startup_blink():
